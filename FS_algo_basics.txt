@@ -1,0 +1,93 @@
+VS_algo.py
+
+This script is to detail the basic steps and gotchas of the FS/VS algorithm
+
+#######################################################################################
+
+Objective
+
+#######################################################################################
+
+Solve NP-hard problem of minimizing loss function for algorithm using optimal subset of features
+    While using the least amount of computational resources
+
+
+Two different optmizations
+    1) Which subset of variables should I use (fixed n)
+    2) How many variables should I use?
+    These two optimizations make the number of combinations at 2^N and is pretty complicated
+
+
+
+
+#######################################################################################
+
+Preprocessing
+
+#######################################################################################
+
+Initial steps for preprocessing
+    If dataset is so wide that it is difficult
+        Variable Ranking
+        PLS/PCA approaches
+        t-SNE
+
+Possible approaches for narrowing subset
+    Keep certain variables
+        Highest ranking of top 5% or 40, whichever is smallest
+        Running a basic lm testing for significance. (would have to specify lm or glm)
+
+    Drop certain variables - really depends on data width
+        Lowest ranking (5% if N > 1000 or something)
+        Maybe make a check to drop those with non-existent p-values
+
+    Dropping some of highly correlated variables - DONT
+        Only drop those at 100%
+
+
+
+#######################################################################################
+
+First phase
+
+#######################################################################################
+
+Create random samples of the sets of variables
+    Make sure every variable is included - evenly sample across all variables
+    But what size?
+        20? 50?
+        Create 50 variations?
+        This is a challenge - data could be 100 or 10,000
+
+Create some other random selections of variables
+    Enough to have variables included in different N sets, and having more/less variables
+
+
+
+
+
+
+
+
+#######################################################################################
+
+Testing Whether it actually works
+
+#######################################################################################
+
+Run algorithm on multiple different problems (kaggle, UCI, etc)
+
+Run other FS algorithms (Boruta, Simulated Annealing, GBFS, greedy, random, brute force, etc)
+
+Tune all with XGBoost
+
+Compare performance on relevant metrics
+    Performance
+    Computational Expense
+
+
+
+
+
+
+
