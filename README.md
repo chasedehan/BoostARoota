@@ -30,13 +30,13 @@ It's really that simple!  Of course, as we build more functionality into it, it 
 
 ## How it works  
 
-This section is coming - the approach is evolving quickly.
+This section is coming - the approach is evolving quickly.  You can definitely look at the code to see how it is working.
 
 ## Algorithm Performance  
 
 BoostARoota is shorted to BAR and the below table is utilizing the LSVT dataset from the UCI datasets.  The algorithm has been tested on other datasets.  The testBAR.py testing framework was just completed (8/25/2017) and will be running many others through.  If you are interested in the specifics of the testing please take a look at the testBAR.py script.  The basics are that it is run through 5-fold CV, with the model selection performed on the training set and then predicting on the heldout test set.  It is done this way to avoid overfitting the feature selection process.
 
-All tests are run on a 12 core Intel i7.
+All tests are run on a 12 core Intel i7. - Future iterations will compare run times on a 28 core Xeon, 120 cores on Spark, and running xgboost on a GPU.
 
 Iteration | Boruta Time| BAR Time |Boruta LogLoss|BAR LogLoss|All Features LogLoss|
 | ------- | -----------| ---- | ---- | ---- | ---- |
@@ -60,6 +60,10 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
    * t-SNE - Has shown some promise in high-dimensional data
  * Algorithm is a single pass through 10 iterations
    * This needs to be more flexible and have more iterations to reduce dimensions further than it currently is. 
+   * Haven't been able to work out a solid stopping criteria yet.
+ * Expand compute to handle larger datasets (if user has the hardware)
+   * Run on PySpark: make it easy enough that can just pass in SparkContext - will require some refactoring
+   * Run XGBoost on GPU - although may run into memory issues with the shadow features.
    
 
 
