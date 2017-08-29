@@ -12,11 +12,10 @@ Solve NP-hard problem of minimizing loss function for algorithm using optimal su
     While using the least amount of computational resources
 
 
-Two different optmizations
+Two different optimizations
     1) Which subset of variables should I use (fixed n)
     2) How many variables should I use?
     These two optimizations make the number of combinations at 2^N and is pretty complicated
-
 
 
 
@@ -31,6 +30,8 @@ Initial steps for preprocessing
         Variable Ranking
         PLS/PCA approaches
         t-SNE
+        Also need to look at near-zero-variance
+
 
 Possible approaches for narrowing subset
     Keep certain variables
