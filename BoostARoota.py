@@ -70,6 +70,65 @@ def BoostARoota(X, Y, metric):
     real_vars = real_vars[(real_vars.Mean > mean_shadow)]
     return real_vars['feature']
 
+########################################################################################
+#
+# Updated function attempt - BoostARoota2() calling reduceVars()
+#
+########################################################################################
+def reduceVars(X, Y, metric):
+    cutoff = 4
+    n_iterations = 10
+    param = {'eval_metric': metric}
+    for i in range(1, n_iterations + 1):
+        # Create the shadow variables and run the model to obtain importances
+        new_X, shadow_names = CreateShadow(X)
+        dtrain = xgb.DMatrix(new_X, label=Y)
+        bst = xgb.train(param, dtrain)
+        if i == 1:
+            df = pd.DataFrame({'feature': new_X.columns})
+            pass
+
+        importance = bst.get_fscore()
+        importance = sorted(importance.items(), key=operator.itemgetter(1))
+        df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
+        df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
+        df = pd.merge(df, df2, on='feature', how='outer')
+
+    df['Mean'] = df.mean(axis=1)
+    #Split them back out
+    real_vars = df[~df['feature'].isin(shadow_names)]
+    shadow_vars = df[df['feature'].isin(shadow_names)]
+
+    # Get mean value from the shadows
+    mean_shadow = shadow_vars['Mean'].mean() / cutoff
+    real_vars = real_vars[(real_vars.Mean > mean_shadow)]
+
+    #Check for the stopping criteria
+        #Basically looking to make sure we are removing at least 10% of the variables, or we should stop
+    if (len(real_vars['feature']) / len(X.columns)) > 0.90:
+        criteria = 1
+    else:
+        criteria = 0
+
+    return criteria, real_vars['feature']
+
+#Main function exposed to run the algorithm
+    #Adding Stopping Criteria
+def BoostARoota2(X, Y, metric):
+    #Function loops through, waiting for the stopping criteria to change
+    new_X = X.copy()
+    i = 0
+    while True:
+        i = i + 1
+        #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
+        crit, keep_vars = reduceVars(new_X, Y, metric)
+        if crit == 1:
+            break #exit and use keep_vars as final variables
+        else:
+            #Execute through again, reducing the dataframe size
+            new_X = new_X[keep_vars].copy()
+    return keep_vars, i
+
 
 #Define helper function to train a model: returns the predictions
 def TrainGetPreds(X_train, Y_train, X_test, metric):
