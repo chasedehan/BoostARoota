@@ -52,6 +52,7 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
    * Ex/ Pass in categorical variables and keeps/drops all levels of the variable (rather than just dropping some dummy variable/levels)
    * Ex/ Pass in categorical, drops some levels and returns dataframe in the same form
      * Have run into problems with dimensions and names differing - would like to fix this
+ * Haven't tested multi-class, need to run more tests to make sure it is working as well on multi-class and regression as it is on binary tasks
  * Preprocessing Steps - Need some first pass filters for reducing dimensionality right off the bat
    * Check and drop _identical_ features, leaving option to drop highly correlated variables
    * Drop variables with near-zero-variance to target variable (creating threshold will be difficult)
