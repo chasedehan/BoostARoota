@@ -55,9 +55,108 @@ def evalResults(df, eval):
         results = evalClass(df)
     return results
 
+def evalBARBAR(df, eval):
+    if eval == 'reg':
+        results = [rmse(df.y_actual, df.y_hat_BR),
+                   rmse(df.y_actual, df.y_hat2_BR),
+                   rmse(df.y_actual, df.y_hat),
+                   mean_absolute_error(df.y_actual, df.y_hat_BR),
+                   mean_absolute_error(df.y_actual, df.y_hat2_BR),
+                   mean_absolute_error(df.y_actual, df.y_hat)]
+        return results
+    else:
+        results = [PrepLL(df.y_actual, df.y_hat_BR),
+                   PrepLL(df.y_actual, df.y_hat2_BR),
+                   PrepLL(df.y_actual, df.y_hat),
+                   roc_auc_score(df.y_actual, df.y_hat_BR),
+                   roc_auc_score(df.y_actual, df.y_hat2_BR),
+                   roc_auc_score(df.y_actual, df.y_hat)]
+    return results
 
 
 
+########################################################################################
+#
+# Testing BAR against itself
+#
+########################################################################################
+
+#just run through getting the predictions for each of the folds all features
+    #Only test on a single metric
+    #Compare the results from each iteration
+def testBARvSelf(X, Y, eval, folds=5):
+    if eval == "reg":
+        eval_metric = "rmse"
+    else:
+        eval_metric = "logloss"
+
+    np.random.seed(None) #removing any seed to ensure that the folds are created differently
+
+    #initialize empty lists - not the most efficient, but it works
+    bar_times = []
+    bar2_times = []
+    y_hat = []
+    y_hat_BR = []
+    y_hat2_BR = []
+    y_actual = []
+    fold = []
+
+    #Start the cross validation
+    kf = KFold(n_splits=folds)
+    i = 1
+    for train, test in kf.split(X):
+        X_train, X_test, y_train, y_test = X.iloc[train], X.iloc[test], Y[train], Y[test]
+
+        #Get predictions on all features
+        y_pred = TrainGetPreds(X_train, y_train, X_test, metric=eval_metric)
+
+        #BAR1
+        tmp = time.time()
+        BR_vars = BoostARoota(X_train, y_train, metric=eval_metric)
+        bar_times.append(time.time() - tmp)
+        BR_X = X_train[BR_vars]
+        BR_test = X_test[BR_vars]
+        BR_preds = TrainGetPreds(BR_X, y_train, BR_test, metric=eval_metric)
+
+        #BAR2
+        tmp = time.time()
+        BR_vars, i = BoostARoota2(X_train, y_train, metric=eval_metric)
+        bar2_times.append(time.time() - tmp)
+        BR_X = X_train[BR_vars]
+        BR_test = X_test[BR_vars]
+        BR2_preds = TrainGetPreds(BR_X, y_train, BR_test, metric=eval_metric)
+
+        # evaluate predictions and append to lists
+        y_hat.extend(y_pred)
+        y_hat_BR.extend(BR_preds)
+        y_hat2_BR.extend(BR2_preds)
+        y_actual.extend(y_test)
+        #Set the fold it is trained on
+        fold.extend([i] * len(y_pred))
+        i+=1
+
+    values = [np.mean(bar_times), np.mean(bar2_times)]
+    #Start building the array to be passed out; first is the timings, then the eval results
+    #Build the dataframe to pass into the evaluation functions
+    results = pd.DataFrame({"y_hat": y_hat,
+                            "Fold": fold,
+                            "y_hat_BR": y_hat_BR,
+                            "y_hat2_BR": y_hat2_BR,
+                            "y_actual": y_actual})
+    values.extend(evalBARBAR(results, eval=eval))
+
+    return pd.DataFrame(values, ["BarTime1", "BarTime2",
+                                 'BAR1_Metric1', 'BAR2_Metric1', 'AllMetric1',
+                                 'BAR1_Metric2', 'BAR2_Metric2', 'AllMetric2'])
+
+
+
+
+########################################################################################
+#
+# Functions for rigorous testing of the approaches
+#
+########################################################################################
 #just run through getting the predictions for each of the folds all features
 def trainKFolds(X, Y, eval, folds=5):
     if eval == "reg":
@@ -147,8 +246,6 @@ def trainKFolds(X, Y, eval, folds=5):
     return values
 
 
-
-
 def repCV(X, Y, eval, repeats=3):
     #runs trainKFolds() for however many repeats specified here
     #Returns the results
@@ -167,99 +264,5 @@ def repCV(X, Y, eval, repeats=3):
 
 
 
-########################################################################################
-#
-# Bring in the different datasets
-#       Perform all dataset transformations here
-#       Then,in next section actually run the tests
-#
-########################################################################################
-#Need to obtain their dimensions to show with the results
-
-data_path = "~/DDE/Chase/Data/"
-#################
-#LSVT Voice Rehab data
-    # Data came from here: https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation
-lsvt = pd.read_csv(data_path + "LSVT_VR.csv")
-
-#Split and make appropriate transformations
-lsvt_X = lsvt[lsvt.columns[1:lsvt.shape[1]]].copy()
-lsvt_Y = lsvt[lsvt.columns[0]].copy() - 1
-lsvt_X = GetCatDummies(lsvt_X)
-del lsvt
-
-lsvt_results = repCV(lsvt_X, lsvt_Y, eval='class')
-
-
-#################
-#credit_card_fraud
-ccf = pd.read_csv(data_path + "credit_card_fraud.csv")
-ccf_Y = ccf.Class
-ccf_X = ccf[ccf.columns[1:29]].copy()
-ccf_X = GetCatDummies(ccf_X)  #No categorical in this case
-
-ccf_results = repCV(ccf_X, ccf_Y, eval='class')
-
-#################
-#HR - why are people leaving
-hr = pd.read_csv(data_path + "HR_Leaving.csv")
-
-
-
-
-#################
-# Predict NHL salaries
-nhl = pd.read_csv(data_path + "NHL_Salaries.csv", encoding = "ISO-8859-1")
-
-
-#################
-# Blackcomb/Ahab 2014 Training Set
-bc = pd.read_csv(data_path + "Blackcomb.csv")
-
-
-
-
-#################
-# Predict credit card defaults
-ccd = pd.read_csv(data_path + "UCI_Credit_Card_Default.csv")
-
-
-
-#################
-# UK House Prices
-ukh = pd.read_csv(data_path + "UK_House_Prices.csv")
-
-
-
-#################
-# Kaggle House Prices
-    #This one also has a test set that can be submitted on Kaggle
-khp = pd.read_csv(data_path + "kaggle_house_prices.csv")
-
-
-
-
-########################################################################################
-#
-# evaluate results
-#
-########################################################################################
-
-
-#Run through each of the models
-
-lsvt_results = trainKFolds(X, Y, eval_metric="rmse")
-
-#Now, just to stack the models on top of each other, gives an even better result
-results['BR_boruta_mean'] = (results.y_hat_BR + results.y_hat_boruta) / 2
-#But doesn't do as well when incorporating all_features, but still does pretty well
-results['all_means'] = (results.y_hat_BR + results.y_hat_boruta + results.y_hat) / 3
-
-#for log loss calcs
-PrepLL(results.y_actual, results.y_hat)
-PrepLL(results.y_actual, results.y_hat_BR)
-PrepLL(results.y_actual, results.y_hat_boruta)
-PrepLL(results.y_actual, results.BR_boruta_mean)
-PrepLL(results.y_actual, results.all_means)
 
 
