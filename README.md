@@ -59,8 +59,8 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
      * Challenge with these is they remove based on linear relationships whereas trees are able to pick out the non-linear relationships and a variable with a low linear dependency may be powerful when combined with others.
    * t-SNE - Has shown some promise in high-dimensional data
  * Algorithm is a single pass through 10 iterations
-   * This needs to be more flexible and have more iterations to reduce dimensions further than it currently is. 
-   * Haven't been able to work out a solid stopping criteria yet.
+   * 9/6/17 - have implemented in BoostARoota2() a stopping criteria specifying that at least 10% of features need to be dropped to continue.
+   * Next step is to test it against Y and the eval_metric to see when it is falling off.
  * Expand compute to handle larger datasets (if user has the hardware)
    * Run on PySpark: make it easy enough that can just pass in SparkContext - will require some refactoring
    * Run XGBoost on GPU - although may run into memory issues with the shadow features.
