@@ -120,7 +120,7 @@ def testBARvSelf(X, Y, eval, folds=5):
 
         #BAR2
         tmp = time.time()
-        BR_vars, i = BoostARoota2(X_train, y_train, metric=eval_metric)
+        BR_vars = BoostARoota2(X_train, y_train, metric=eval_metric)
         bar2_times.append(time.time() - tmp)
         BR_X = X_train[BR_vars]
         BR_test = X_test[BR_vars]
