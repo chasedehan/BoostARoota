@@ -43,7 +43,14 @@ def CreateShadow(X_train):
 #Main function exposed to run the algorithm
 def BoostARoota(X, Y, metric):
     n_iterations = 10
-    param = {'eval_metric': metric}
+
+    #Specify if parameters need to be different for
+    if metric == 'mlogloss':
+        param = {'objective': 'multi:softmax',
+                 'eval_metric': 'mlogloss',
+                 'num_class': len(np.unique(Y))}
+    else:
+        param = {'eval_metric': metric}
     cutoff = 4
     for i in range(1, n_iterations + 1):
         # Create the shadow variables and run the model to obtain importances
@@ -78,13 +85,21 @@ def BoostARoota(X, Y, metric):
 def reduceVars(X, Y, metric):
     cutoff = 4
     n_iterations = 10
-    param = {'eval_metric': metric}
-    for i in range(1, n_iterations + 1):
+
+    #Split out the parameters if it is a multi class problem
+    if metric == 'mlogloss':
+        param = {'objective': 'multi:softmax',
+                 'eval_metric': 'mlogloss',
+                 'num_class': len(np.unique(Y))}
+    else:
+        param = {'eval_metric': metric}
+
+    for i in range(n_iterations):
         # Create the shadow variables and run the model to obtain importances
         new_X, shadow_names = CreateShadow(X)
         dtrain = xgb.DMatrix(new_X, label=Y)
         bst = xgb.train(param, dtrain)
-        if i == 1:
+        if i == 0:
             df = pd.DataFrame({'feature': new_X.columns})
             pass
 
@@ -113,21 +128,20 @@ def reduceVars(X, Y, metric):
     return criteria, real_vars['feature']
 
 #Main function exposed to run the algorithm
-    #Adding Stopping Criteria
+    #Added Stopping Criteria
 def BoostARoota2(X, Y, metric):
     #Function loops through, waiting for the stopping criteria to change
     new_X = X.copy()
-    i = 0
+    #Run through loop until "crit" changes as stopping criteria to stop
     while True:
-        i = i + 1
         #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
         crit, keep_vars = reduceVars(new_X, Y, metric)
+
         if crit == 1:
             break #exit and use keep_vars as final variables
         else:
-            #Execute through again, reducing the dataframe size
             new_X = new_X[keep_vars].copy()
-    return keep_vars, i
+    return keep_vars
 
 
 #Define helper function to train a model: returns the predictions
