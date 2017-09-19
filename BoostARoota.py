@@ -82,7 +82,7 @@ def BoostARoota(X, Y, metric):
 # Updated function attempt - BoostARoota2() calling reduceVars()
 #
 ########################################################################################
-def reduceVars(X, Y, metric):
+def reduceVars(X, Y, metric, round):
     cutoff = 4
     n_iterations = 10
 
@@ -90,16 +90,18 @@ def reduceVars(X, Y, metric):
     if metric == 'mlogloss':
         param = {'objective': 'multi:softmax',
                  'eval_metric': 'mlogloss',
-                 'num_class': len(np.unique(Y))}
+                 'num_class': len(np.unique(Y)),
+                 'silent': 1}
     else:
-        param = {'eval_metric': metric}
+        param = {'eval_metric': metric,
+                 'silent': 1}
 
-    for i in range(n_iterations):
+    for i in range(1, n_iterations+1):
         # Create the shadow variables and run the model to obtain importances
         new_X, shadow_names = CreateShadow(X)
         dtrain = xgb.DMatrix(new_X, label=Y)
-        bst = xgb.train(param, dtrain)
-        if i == 0:
+        bst = xgb.train(param, dtrain, verbose_eval=False)
+        if i == 1:
             df = pd.DataFrame({'feature': new_X.columns})
             pass
 
@@ -108,6 +110,7 @@ def reduceVars(X, Y, metric):
         df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
         df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
         df = pd.merge(df, df2, on='feature', how='outer')
+        print("Round: ", round, " iteration: ", i)
 
     df['Mean'] = df.mean(axis=1)
     #Split them back out
@@ -133,14 +136,17 @@ def BoostARoota2(X, Y, metric):
     #Function loops through, waiting for the stopping criteria to change
     new_X = X.copy()
     #Run through loop until "crit" changes as stopping criteria to stop
+    i = 0
     while True:
         #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
-        crit, keep_vars = reduceVars(new_X, Y, metric)
+        i += 1
+        crit, keep_vars = reduceVars(new_X, Y, metric=metric, round=i)
 
         if crit == 1:
             break #exit and use keep_vars as final variables
         else:
             new_X = new_X[keep_vars].copy()
+    print("BoostARoota ran successfully! Algorithm went through ", i, " rounds.")
     return keep_vars
 
 
@@ -153,6 +159,36 @@ def TrainGetPreds(X_train, Y_train, X_test, metric):
     # evaluate predictions
     y_pred = bst.predict(dtest)
     return y_pred
+
+
+
+########################################################################################
+#
+# Stopping criteria for eval_metric
+#
+########################################################################################
+#TODO: Code this up to see how well it works
+
+#Nested Cross Validation with the stopping criteria
+    #inside each fold, need to create new folds to check on the eval_metric for the holdout
+    #For this, there isn't a need to create the shadow features - I don't think?
+        #Can basically just reduce the feature set by the lowest 10% (or whatever) until the eval_metric worsens
+        #Can also build it to specify N features desired/targeted
+
+#CV - fold 1
+    #Create three folds - inside fold 1
+        #Run core BAR on train
+        #Predict on test set
+        #evaluate according to the appropriate metric (eg. logloss)
+        #If metric decreases:
+            #stop, or go back to last iteration
+        #Need to remember which features are dropped at each iteration
+            #Return the features determined to be best
+
+
+
+
+
 
 
 ########################################################################################

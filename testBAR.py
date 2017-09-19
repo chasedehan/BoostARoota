@@ -63,7 +63,6 @@ def evalBARBAR(df, eval):
                    mean_absolute_error(df.y_actual, df.y_hat_BR),
                    mean_absolute_error(df.y_actual, df.y_hat2_BR),
                    mean_absolute_error(df.y_actual, df.y_hat)]
-        return results
     else:
         results = [PrepLL(df.y_actual, df.y_hat_BR),
                    PrepLL(df.y_actual, df.y_hat2_BR),
@@ -191,7 +190,7 @@ def trainKFolds(X, Y, eval, folds=5):
 
         #BoostARoota - tune to metric 1
         tmp = time.time()
-        BR_vars = BoostARoota(X_train, y_train, metric=eval_metric)
+        BR_vars = BoostARoota2(X_train, y_train, metric=eval_metric)
         bar_times.append(time.time() - tmp)
         BR_X = X_train[BR_vars]
         BR_test = X_test[BR_vars]
@@ -199,7 +198,7 @@ def trainKFolds(X, Y, eval, folds=5):
 
         #BoostARoota - tune to metric 2
         tmp = time.time()
-        BR_vars = BoostARoota(X_train, y_train, metric=eval_metric2)
+        BR_vars = BoostARoota2(X_train, y_train, metric=eval_metric2)
         bar_times.append(time.time() - tmp)
         BR_X = X_train[BR_vars]
         BR_test = X_test[BR_vars]
