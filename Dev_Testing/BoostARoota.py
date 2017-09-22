@@ -16,7 +16,6 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import log_loss
 import operator
 from sklearn.decomposition import PCA
 
@@ -40,46 +39,9 @@ def CreateShadow(X_train):
     new_X = pd.concat([X_train, X_shadow], axis=1)
     return new_X, shadow_names
 
-#Main function exposed to run the algorithm
-def BoostARoota(X, Y, metric):
-    n_iterations = 10
-
-    #Specify if parameters need to be different for
-    if metric == 'mlogloss':
-        param = {'objective': 'multi:softmax',
-                 'eval_metric': 'mlogloss',
-                 'num_class': len(np.unique(Y))}
-    else:
-        param = {'eval_metric': metric}
-    cutoff = 4
-    for i in range(1, n_iterations + 1):
-        # Create the shadow variables and run the model to obtain importances
-        new_X, shadow_names = CreateShadow(X)
-        dtrain = xgb.DMatrix(new_X, label=Y)
-        bst = xgb.train(param, dtrain)
-        if i == 1:
-            df = pd.DataFrame({'feature': new_X.columns})
-            pass
-
-        importance = bst.get_fscore()
-        importance = sorted(importance.items(), key=operator.itemgetter(1))
-        df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
-        df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
-        df = pd.merge(df, df2, on='feature', how='outer')
-
-    df['Mean'] = df.mean(axis=1)
-    #Split them back out
-    real_vars = df[~df['feature'].isin(shadow_names)]
-    shadow_vars = df[df['feature'].isin(shadow_names)]
-
-    # Get mean value from the shadows
-    mean_shadow = shadow_vars['Mean'].mean() / cutoff  #TODO: At what level of conservativeness do I cut this off?
-    real_vars = real_vars[(real_vars.Mean > mean_shadow)]
-    return real_vars['feature']
-
 ########################################################################################
 #
-# Updated function attempt - BoostARoota2() calling reduceVars()
+# BoostARoota
 #
 ########################################################################################
 def reduceVars(X, Y, metric, round):
