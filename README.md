@@ -4,35 +4,50 @@ A Fast XGBoost Feature Selection Algorithm
 ## Why Create Another Algorithm?  
 Automated processes like Boruta showed early promise as they were able to provide superior performance with Random Forests, but has some deficiencies including slow computation time: especially with high dimensional data. Regardless of the run time, Boruta does perform well on Random Forests, but performs poorly on other algorithms such as boosting or neural networks. Similar deficiencies occur with regularization on LASSO, elastic net, or ridge regressions in that they perform well on linear regressions, but poorly on other modern algorithms.
 
-I am proposing and demonstrating a feature selection algorithm (called BoostARoota) in a similar spirit to Boruta utilizing XGBoost as the base model rather than a Random Forest. The algorithm runs in a fraction of the time it takes Boruta and has superior performance on a variety of datasets.  While the spirit is similar to Boruta, BoostARoota takes an approach 
+I am proposing and demonstrating a feature selection algorithm (called BoostARoota) in a similar spirit to Boruta utilizing XGBoost as the base model rather than a Random Forest. The algorithm runs in a fraction of the time it takes Boruta and has superior performance on a variety of datasets.  While the spirit is similar to Boruta, BoostARoota takes a slightly different approach for the removal of attributes that executes much faster.
 
 ## How to use the code  
-The code is currently not in a package to `pip install` so you will need to manually run the BoostARoota.py file.  
+Easiest way is to use `pip`:
+```
+$ pip install boostaroota
+```
 
-The only function you _have_ to have is `BoostARoota(X, Y, metric)`.  In order to use the function, it does require X to be one-hot-encoded(OHE), so `GetCatDummies(X, ReplaceNA=True)` may be helpful as it determines which variables are categorical and converts them into dummy variables.  
+The only function you _have_ to have is `br.BoostARoota(X, Y, metric)`.  In order to use the function, it does require X to be one-hot-encoded(OHE), so using the pandas function `pd.get_dummies(X)` may be helpful as it determines which variables are categorical and converts them into dummy variables.  
 
 Assuming you have X and Y split, you can run the following:  
 ```
+import boostaroota as br
+import pandas as pd
+
 #Specify the evaluation metric: can use whichever you like as long as recognized by XGBoost
   #EXCEPTION: multi-class currently only supports "mlogloss" so much be passed in as eval_metric
 eval_metric = 'logloss' 
 #OHE the Predictors
-X = GetCatDummies(X)
+X = pd.getdummies(X)
 
 #Run BoostARoota - will return a list of variables
-BR_vars = BoostARoota(X, Y, metric=eval_metric)
-  #BoostARoota2() is now also available, initial results are good, but not fully validated
+BR_vars = br.BoostARoota(X, Y, metric=eval_metric)
   
 #Reduce X to only include those deemed as import to BoostARoota
 BR_X = X[BR_vars].copy()
 ```
 
-It's really that simple!  Of course, as we build more functionality into it, it will get to be more difficult.  Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, GetCatDummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
+It's really that simple!  Of course, as we build more functionality into it, it will get to be more difficult.  Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, pd.get_dummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
 
 
 ## How it works  
+Similar in spirit to Boruta, BoostARoota creates shadow features, but modifies the removal step a little mored
 
-This section is coming - the approach is evolving quickly.  You can definitely look at the code to see how it is working though!
+1. One-Hot-Encode the feature set
+2. Double width of the data set, making a copy of all features in original dataset
+3. Randomly shuffle the new features created in (2).  These duplicated and shuffled features are referred to as "shadow features"
+4. Run XGBoost classifier on the entire data set ten times.  Running it ten times allows for random noise to be smoothed, resulting in more robust estimates of importance.
+5. Obtain importance values for each feature.  This is a simple importance metric that sums up how many times the particular feature was split on in the XGBoost algorithm.
+6. Compute "cutoff": the average feature importance value for all shadow features and divide by four.  Shadow importance values are divided by four to make it more difficult for the variables to be removed.  With values lower than this, features are removed at too high of a rate.
+7. Remove features with average importance across the ten iterations that is less than the cutoff specified in (6)
+8. Go back to (2) until the number of features removed is less than ten percent of the total.
+9. Method returns the features remaining once completed.
+
 
 ## Algorithm Performance  
 
@@ -40,11 +55,11 @@ BoostARoota is shorted to BAR and the below table is utilizing the LSVT dataset 
 
 All tests are run on a 12 core Intel i7. - Future iterations will compare run times on a 28 core Xeon, 120 cores on Spark, and running xgboost on a GPU.
 
-|Data Set | Boruta Time| BoostARoota Time |BoostARoota LogLoss|Boruta LogLoss|All Features LogLoss| BAR >= All |
-| ------- | -----------| ---- | ---- | ---- | ---- | ---- |
-|[LSVT](https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation)  | 50.289s  | 0.487s   | 0.5617 | 0.6950 | 0.7311 | Yes |
-|[HR](https://www.kaggle.com/ludobenistant/hr-analytics) | 33.704s  | 0.485s   | 0.1046 | 0.1003 | 0.1047 | Yes |
-|[Fraud](https://www.kaggle.com/dalpozz/creditcardfraud) | 38.619s  | 1.790s   | 0.4333 | 0.4353 | 0.4333 | Yes |
+|Data Set | Target | Boruta Time| BoostARoota Time |BoostARoota LogLoss|Boruta LogLoss|All Features LogLoss| BAR >= All |
+| ------- | ------ | -----------| ---- | ---- | ---- | ---- | ---- |
+|[LSVT](https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation)  |0/1|50.289s  | 0.487s   | 0.5617 | 0.6950 | 0.7311 | Yes |
+|[HR](https://www.kaggle.com/ludobenistant/hr-analytics) |0/1| 33.704s  | 0.485s   | 0.1046 | 0.1003 | 0.1047 | Yes |
+|[Fraud](https://www.kaggle.com/dalpozz/creditcardfraud) |0/1| 38.619s  | 1.790s   | 0.4333 | 0.4353 | 0.4333 | Yes |
 
 As can be seen, the speed up from BoostARoota is around 100x with substantial reductions in log loss.  Part of this speed up is that Boruta is running single threaded, while BoostARoota (on XGB) is running on all 12 cores.  Not sure how this time speed up works with larger datasets as of yet.  
 
@@ -69,6 +84,7 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
    * Run XGBoost on GPU - although may run into memory issues with the shadow features.
    
 ## Updates
+* 9/22/17 - Uploaded to PyPI and expanded tests
 * 9/8/17 - Added Support for multi-class classification, but only for logloss.  Need to pass in eval="mlogloss"
 * 9/6/17 - have implemented in BoostARoota2() a stopping criteria specifying that at least 10% of features need to be dropped to continue.
 * 8/25/17 - The testBAR.py testing framework was just completed.
