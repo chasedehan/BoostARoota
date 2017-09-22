@@ -16,7 +16,6 @@
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.metrics import log_loss
 import operator
 from sklearn.decomposition import PCA
 
@@ -40,23 +39,30 @@ def CreateShadow(X_train):
     new_X = pd.concat([X_train, X_shadow], axis=1)
     return new_X, shadow_names
 
-#Main function exposed to run the algorithm
-def BoostARoota(X, Y, metric):
+########################################################################################
+#
+# BoostARoota
+#
+########################################################################################
+def reduceVars(X, Y, metric, round):
+    cutoff = 4
     n_iterations = 10
 
-    #Specify if parameters need to be different for
+    #Split out the parameters if it is a multi class problem
     if metric == 'mlogloss':
         param = {'objective': 'multi:softmax',
                  'eval_metric': 'mlogloss',
-                 'num_class': len(np.unique(Y))}
+                 'num_class': len(np.unique(Y)),
+                 'silent': 1}
     else:
-        param = {'eval_metric': metric}
-    cutoff = 4
-    for i in range(1, n_iterations + 1):
+        param = {'eval_metric': metric,
+                 'silent': 1}
+
+    for i in range(1, n_iterations+1):
         # Create the shadow variables and run the model to obtain importances
         new_X, shadow_names = CreateShadow(X)
         dtrain = xgb.DMatrix(new_X, label=Y)
-        bst = xgb.train(param, dtrain)
+        bst = xgb.train(param, dtrain, verbose_eval=False)
         if i == 1:
             df = pd.DataFrame({'feature': new_X.columns})
             pass
@@ -66,48 +72,7 @@ def BoostARoota(X, Y, metric):
         df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
         df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
         df = pd.merge(df, df2, on='feature', how='outer')
-
-    df['Mean'] = df.mean(axis=1)
-    #Split them back out
-    real_vars = df[~df['feature'].isin(shadow_names)]
-    shadow_vars = df[df['feature'].isin(shadow_names)]
-
-    # Get mean value from the shadows
-    mean_shadow = shadow_vars['Mean'].mean() / cutoff  #TODO: At what level of conservativeness do I cut this off?
-    real_vars = real_vars[(real_vars.Mean > mean_shadow)]
-    return real_vars['feature']
-
-########################################################################################
-#
-# Updated function attempt - BoostARoota2() calling reduceVars()
-#
-########################################################################################
-def reduceVars(X, Y, metric):
-    cutoff = 4
-    n_iterations = 10
-
-    #Split out the parameters if it is a multi class problem
-    if metric == 'mlogloss':
-        param = {'objective': 'multi:softmax',
-                 'eval_metric': 'mlogloss',
-                 'num_class': len(np.unique(Y))}
-    else:
-        param = {'eval_metric': metric}
-
-    for i in range(n_iterations):
-        # Create the shadow variables and run the model to obtain importances
-        new_X, shadow_names = CreateShadow(X)
-        dtrain = xgb.DMatrix(new_X, label=Y)
-        bst = xgb.train(param, dtrain)
-        if i == 0:
-            df = pd.DataFrame({'feature': new_X.columns})
-            pass
-
-        importance = bst.get_fscore()
-        importance = sorted(importance.items(), key=operator.itemgetter(1))
-        df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
-        df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
-        df = pd.merge(df, df2, on='feature', how='outer')
+        print("Round: ", round, " iteration: ", i)
 
     df['Mean'] = df.mean(axis=1)
     #Split them back out
@@ -133,14 +98,17 @@ def BoostARoota2(X, Y, metric):
     #Function loops through, waiting for the stopping criteria to change
     new_X = X.copy()
     #Run through loop until "crit" changes as stopping criteria to stop
+    i = 0
     while True:
         #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
-        crit, keep_vars = reduceVars(new_X, Y, metric)
+        i += 1
+        crit, keep_vars = reduceVars(new_X, Y, metric=metric, round=i)
 
         if crit == 1:
             break #exit and use keep_vars as final variables
         else:
             new_X = new_X[keep_vars].copy()
+    print("BoostARoota ran successfully! Algorithm went through ", i, " rounds.")
     return keep_vars
 
 
@@ -153,6 +121,36 @@ def TrainGetPreds(X_train, Y_train, X_test, metric):
     # evaluate predictions
     y_pred = bst.predict(dtest)
     return y_pred
+
+
+
+########################################################################################
+#
+# Stopping criteria for eval_metric
+#
+########################################################################################
+#TODO: Code this up to see how well it works
+
+#Nested Cross Validation with the stopping criteria
+    #inside each fold, need to create new folds to check on the eval_metric for the holdout
+    #For this, there isn't a need to create the shadow features - I don't think?
+        #Can basically just reduce the feature set by the lowest 10% (or whatever) until the eval_metric worsens
+        #Can also build it to specify N features desired/targeted
+
+#CV - fold 1
+    #Create three folds - inside fold 1
+        #Run core BAR on train
+        #Predict on test set
+        #evaluate according to the appropriate metric (eg. logloss)
+        #If metric decreases:
+            #stop, or go back to last iteration
+        #Need to remember which features are dropped at each iteration
+            #Return the features determined to be best
+
+
+
+
+
 
 
 ########################################################################################
