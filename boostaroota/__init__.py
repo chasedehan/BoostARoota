@@ -9,8 +9,13 @@ import operator
 #
 ########################################################################################
 
-#Take all X variables, creating copies and randomly shuffling them
+
 def CreateShadow(X_train):
+    """
+    Take all X variables, creating copies and randomly shuffling them
+    :param X_train: the dataframe to create shadow features on
+    :return: dataframe 2x width and the names of the shadows for removing later
+    """
     X_shadow = X_train.copy()
     for c in X_shadow.columns:
         np.random.shuffle(X_shadow[c].values)
@@ -27,6 +32,14 @@ def CreateShadow(X_train):
 #
 ########################################################################################
 def reduceVars(X, Y, metric, round):
+    """
+    Function to run through each
+    :param X: Input dataframe - X
+    :param Y: Target variable
+    :param metric: Metric to optimize in XGBoost
+    :param round: Round so it can be printed to screen
+    :return: tuple - stopping criteria and the variables to keep
+    """
     cutoff = 4
     n_iterations = 10
 
@@ -75,11 +88,17 @@ def reduceVars(X, Y, metric, round):
     return criteria, real_vars['feature']
 
 #Main function exposed to run the algorithm
-    #Added Stopping Criteria
 def BoostARoota(X, Y, metric):
-    #Function loops through, waiting for the stopping criteria to change
+    """
+    Function loops through, waiting for the stopping criteria to change
+    :param X: X dataframe One Hot Encoded
+    :param Y: Labels for the target variable
+    :param metric: The metric to optimize in XGBoost
+    :return: names of the variables to keep
+    """
+
     new_X = X.copy()
-    #Run through loop until "crit" changes as stopping criteria to stop
+    #Run through loop until "crit" changes
     i = 0
     while True:
         #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
