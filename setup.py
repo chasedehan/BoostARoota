@@ -8,4 +8,4 @@ setup(name='boostaroota',
       author_email='chasedehan@yahoo.com',
       license='MIT',
       packages=['boostaroota'],
-      zip_safe=False)
+      zip_safe=False, install_requires=['numpy'])

@@ -1,18 +1,21 @@
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
+import boostaroota as br
 
 #################
 #LSVT Voice Rehab data
     # Data came from here: https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation
-lsvt = pd.read_csv(data_path + "LSVT_VR.csv")
+lsvt = pd.read_csv('//pf.stormwind.local/DDE/Chase/Data/lsvt_VR.csv')
+#lsvt = pd.read_csv(data_path + "LSVT_VR.csv")
 
 #Split and make appropriate transformations
 lsvt_X = lsvt[lsvt.columns[1:lsvt.shape[1]]].copy()
 lsvt_Y = lsvt[lsvt.columns[0]].copy() - 1
-lsvt_X = GetCatDummies(lsvt_X)
+lsvt_X = pd.get_dummies(lsvt_X)
 del lsvt
 
-names = BoostARoota2(lsvt_X, lsvt_Y, metric='logloss')
+names = br.BoostARoota(lsvt_X, lsvt_Y, metric='logloss')
 
 lsvt_results = testBARvSelf(lsvt_X, lsvt_Y, eval='class')
 print(lsvt_results)
