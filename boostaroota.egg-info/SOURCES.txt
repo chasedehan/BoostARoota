@@ -1,7 +1,0 @@
-setup.py
-boostaroota/__init__.py
-boostaroota.egg-info/PKG-INFO
-boostaroota.egg-info/SOURCES.txt
-boostaroota.egg-info/dependency_links.txt
-boostaroota.egg-info/not-zip-safe
-boostaroota.egg-info/top_level.txt
