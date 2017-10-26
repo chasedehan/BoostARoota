@@ -6,14 +6,29 @@ import boostaroota as br
     # Data came from here: https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation
 lsvt = pd.read_csv('//pf.stormwind.local/DDE/Chase/Data/lsvt_VR.csv')
 
+
+
+
 #Split and make appropriate transformations
 lsvt_X = lsvt[lsvt.columns[1:lsvt.shape[1]]].copy()
 lsvt_Y = lsvt[lsvt.columns[0]].copy() - 1
 lsvt_X = pd.get_dummies(lsvt_X)
 del lsvt
 
-#Run BoostARoota
-names = br.BoostARoota(lsvt_X, lsvt_Y, metric='logloss')
+
+
+########################################################################################################################
+#
+#  Test that BoostARoota is working
+#
+########################################################################################################################
+a =BoostARoota(metric='logloss')
+a.fit(train,labels)
+len(train.columns)
+len(a.keep_vars_)
+a.transform(train)
+a.fit_transform(train,labels)
+
 
 #Reduce the data frame
 new_X = lsvt_X[names].copy()
