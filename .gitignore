@@ -1,3 +1,5 @@
+.gitignore
+
 # Compiled python modules.
 *.pyc
 
@@ -9,3 +11,6 @@
 Dev_Testing/boostaroota.egg-info/
 Dev_Testing/dist/
 build/
+
+idea/
+.idea/

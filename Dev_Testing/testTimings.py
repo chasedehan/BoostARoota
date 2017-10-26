@@ -2,6 +2,9 @@
 """
 This script is to develop the timings for a variety of dataframes
 Should be conducted in a similar spirit to that described in the original Boruta Paper
+
+
+OLD - has the older call to BR
 """
 
 import pandas as pd
@@ -24,6 +27,7 @@ labels_url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/madelon/M
 raw_data = urllib.request.urlopen(labels_url)
 labels = pd.read_csv(raw_data, delimiter=",", header=None)
 labels.columns = ["Y"]
+
 
 ########################################################################################################################
 #
@@ -72,3 +76,6 @@ for i in range(3):
     timingDF['N'+str(i)] = oneIteration()
 
 timingDF.to_csv('timings.csv')
+
+
+
