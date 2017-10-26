@@ -6,44 +6,55 @@ Automated processes like Boruta showed early promise as they were able to provid
 
 I am proposing and demonstrating a feature selection algorithm (called BoostARoota) in a similar spirit to Boruta utilizing XGBoost as the base model rather than a Random Forest. The algorithm runs in a fraction of the time it takes Boruta and has superior performance on a variety of datasets.  While the spirit is similar to Boruta, BoostARoota takes a slightly different approach for the removal of attributes that executes much faster.
 
-## How to use the code  
+## Installation 
 Easiest way is to use `pip`:
 ```
 $ pip install boostaroota
 ```
 
-The only function you _have_ to have is `br.BoostARoota(X, Y, metric)`.  In order to use the function, it does require X to be one-hot-encoded(OHE), so using the pandas function `pd.get_dummies(X)` may be helpful as it determines which variables are categorical and converts them into dummy variables.  
+## Usage
+
+This module is built for use in a similar manner to sklearn with `fit()`, `transform()`, etc.  In order to use the package, it does require X to be one-hot-encoded(OHE), so using the pandas function `pd.get_dummies(X)` may be helpful as it determines which variables are categorical and converts them into dummy variables.  This package does rely on pandas under the hood so data must be passed in as a pandas dataframe.
 
 Assuming you have X and Y split, you can run the following:  
 ```
-import boostaroota as br
+from boostaroota import BoostARoota
 import pandas as pd
 
+#OHE the variables - BoostARoota may break if not done
+x = pd.getdummies(x)
 #Specify the evaluation metric: can use whichever you like as long as recognized by XGBoost
   #EXCEPTION: multi-class currently only supports "mlogloss" so much be passed in as eval_metric
-eval_metric = 'logloss' 
-#OHE the Predictors
-X = pd.getdummies(X)
+br = BoostARoota(metric='logloss')
 
-#Run BoostARoota - will return a list of variables
-BR_vars = br.BoostARoota(X, Y, metric=eval_metric)
-  
-#Reduce X to only include those deemed as import to BoostARoota
-BR_X = X[BR_vars].copy()
+#Fit the model for the subset of variables
+br.fit(x,y)
+
+#Can look at the important variables - will return a pandas series
+br.keep_vars_
+
+#Then modify dataframe to only include the important variables
+br.transform(x)
+
 ```
 
-It's really that simple!  Of course, as we build more functionality into it, it will get to be more difficult.  Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, pd.get_dummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
+It's really that simple!  Of course, as we build more functionality there may be a few more Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, pd.get_dummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
 
+## Usage - Choosing Parameters
+
+The default parameters are optimally chosen for the widest range of input dataframes.  However, there are cases where other values could be more optimal.
+
+Values coming soon.
 
 ## How it works  
-Similar in spirit to Boruta, BoostARoota creates shadow features, but modifies the removal step a little mored
+Similar in spirit to Boruta, BoostARoota creates shadow features, but modifies the removal step.
 
 1. One-Hot-Encode the feature set
 2. Double width of the data set, making a copy of all features in original dataset
 3. Randomly shuffle the new features created in (2).  These duplicated and shuffled features are referred to as "shadow features"
-4. Run XGBoost classifier on the entire data set ten times.  Running it ten times allows for random noise to be smoothed, resulting in more robust estimates of importance.
+4. Run XGBoost classifier on the entire data set ten times.  Running it ten times allows for random noise to be smoothed, resulting in more robust estimates of importance. The number of repeats is a parameter than can be changed.
 5. Obtain importance values for each feature.  This is a simple importance metric that sums up how many times the particular feature was split on in the XGBoost algorithm.
-6. Compute "cutoff": the average feature importance value for all shadow features and divide by four.  Shadow importance values are divided by four to make it more difficult for the variables to be removed.  With values lower than this, features are removed at too high of a rate.
+6. Compute "cutoff": the average feature importance value for all shadow features and divide by four.  Shadow importance values are divided by four (parameter can be changed) to make it more difficult for the variables to be removed.  With values lower than this, features are removed at too high of a rate.
 7. Remove features with average importance across the ten iterations that is less than the cutoff specified in (6)
 8. Go back to (2) until the number of features removed is less than ten percent of the total.
 9. Method returns the features remaining once completed.
@@ -84,6 +95,7 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
    * Run XGBoost on GPU - although may run into memory issues with the shadow features.
    
 ## Updates
+* 10/26/17 - Modified Structure to resemble sklearn classes and added tuning parameters.
 * 9/22/17 - Uploaded to PyPI and expanded tests
 * 9/8/17 - Added Support for multi-class classification, but only for logloss.  Need to pass in eval="mlogloss"
 * 9/6/17 - have implemented in BoostARoota2() a stopping criteria specifying that at least 10% of features need to be dropped to continue.
@@ -92,3 +104,9 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
 ## Want to Contribute?
 
 This project has found some initial successes and there are a number of directions it can head.  It would be great to have some additional help if you are willing/able.  Whether it is directly contributing to the codebase or just giving some ideas, any help is appreciated.  The goal is to make the algorithm as robust as possible.  The primary focus right now is on the components under Future Implementations, but are in active development.  Please reach out to see if there is anything you would like to contribute in that part to make sure we aren't duplicating work.  
+
+## Current Contributors
+* Chase DeHan
+* Zach Riddle
+
+A special thanks to [Progressive Leasing](http://progleasing.com) for sponsoring this research.
