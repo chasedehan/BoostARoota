@@ -9,6 +9,8 @@ import warnings
 # Main Class and Methods
 #
 ########################################################################################
+
+
 class BoostARoota:
 
     def __init__(self, metric, cutoff=4, iters=10, max_rounds=100, delta=0.1, silent=False):
@@ -21,9 +23,9 @@ class BoostARoota:
         self.keep_vars_ = None
 
         #Throw errors if the inputted parameters don't meet the necessary criteria
-        if(cutoff <= 0):
+        if cutoff <= 0:
             raise ValueError('cutoff should be greater than 0. You entered' + str(cutoff))
-        if (iters <=0):
+        if iters <= 0:
             raise ValueError('iters should be greater than 0. You entered' + str(iters))
         if (delta <= 0) | (delta > 1):
             raise ValueError('delta should be between 0 and 1, was ' + str(delta))
@@ -35,8 +37,6 @@ class BoostARoota:
             warnings.warn("WARNING: Setting max_rounds below 1 will automatically be set to 1.")
 
     def fit(self, x, y):
-        # Set the ranking attribute
-        # Return: None
         self.keep_vars_ = _BoostARoota(x, y,
                                        metric=self.metric,
                                        cutoff=self.cutoff,
@@ -61,6 +61,7 @@ class BoostARoota:
 #
 ########################################################################################
 
+
 def _create_shadow(x_train):
     """
     Take all X variables, creating copies and randomly shuffling them
@@ -74,14 +75,16 @@ def _create_shadow(x_train):
     shadow_names = ["ShadowVar" + str(i + 1) for i in range(x_train.shape[1])]
     x_shadow.columns = shadow_names
     # Combine to make one new dataframe
-    new_X = pd.concat([x_train, x_shadow], axis=1)
-    return new_X, shadow_names
+    new_x = pd.concat([x_train, x_shadow], axis=1)
+    return new_x, shadow_names
 
 ########################################################################################
 #
 # BoostARoota
 #
 ########################################################################################
+
+
 def _reduce_vars(x, y, metric, this_round, cutoff, n_iterations, delta, silent):
     """
     Function to run through each
@@ -91,10 +94,7 @@ def _reduce_vars(x, y, metric, this_round, cutoff, n_iterations, delta, silent):
     :param this_round: Round so it can be printed to screen
     :return: tuple - stopping criteria and the variables to keep
     """
-    # cutoff = self.cutoff
-    # # n_iterations = 10
-
-    #Split out the parameters if it is a multi class problem
+    #Set up the parameters for running the model in XGBoost - split is on multi log loss
     if metric == 'mlogloss':
         param = {'objective': 'multi:softmax',
                  'eval_metric': 'mlogloss',
@@ -105,11 +105,11 @@ def _reduce_vars(x, y, metric, this_round, cutoff, n_iterations, delta, silent):
                  'silent': 1}
     for i in range(1, n_iterations+1):
         # Create the shadow variables and run the model to obtain importances
-        new_X, shadow_names = _create_shadow(x)
-        dtrain = xgb.DMatrix(new_X, label=y)
+        new_x, shadow_names = _create_shadow(x)
+        dtrain = xgb.DMatrix(new_x, label=y)
         bst = xgb.train(param, dtrain, verbose_eval=False)
         if i == 1:
-            df = pd.DataFrame({'feature': new_X.columns})
+            df = pd.DataFrame({'feature': new_x.columns})
             pass
 
         importance = bst.get_fscore()
@@ -130,7 +130,7 @@ def _reduce_vars(x, y, metric, this_round, cutoff, n_iterations, delta, silent):
     real_vars = real_vars[(real_vars.Mean > mean_shadow)]
 
     #Check for the stopping criteria
-        #Basically looking to make sure we are removing at least 10% of the variables, or we should stop
+    #Basically looking to make sure we are removing at least 10% of the variables, or we should stop
     if (len(real_vars['feature']) / len(x.columns)) > (1-delta):
         criteria = True
     else:
@@ -148,13 +148,13 @@ def _BoostARoota(x, y, metric, cutoff, iters, max_rounds, delta, silent):
     :return: names of the variables to keep
     """
 
-    new_X = x.copy()
+    new_x = x.copy()
     #Run through loop until "crit" changes
     i = 0
     while True:
         #Inside this loop we reduce the dataset on each iteration exiting with keep_vars
         i += 1
-        crit, keep_vars = _reduce_vars(new_X, y,
+        crit, keep_vars = _reduce_vars(new_x, y,
                                        metric=metric,
                                        this_round=i,
                                        cutoff=cutoff,
@@ -165,7 +165,7 @@ def _BoostARoota(x, y, metric, cutoff, iters, max_rounds, delta, silent):
         if crit | (i >= max_rounds):
             break  # exit and use keep_vars as final variables
         else:
-            new_X = new_X[keep_vars].copy()
+            new_x = new_x[keep_vars].copy()
     if not silent:
         print("BoostARoota ran successfully! Algorithm went through ", i, " rounds.")
     return keep_vars

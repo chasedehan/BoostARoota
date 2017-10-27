@@ -1,20 +1,18 @@
 import pandas as pd
-import boostaroota as br
+from boostaroota import BoostARoota
+import urllib
 
 #################
-#LSVT Voice Rehab data
-    # Data came from here: https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation
-lsvt = pd.read_csv('//pf.stormwind.local/DDE/Chase/Data/lsvt_VR.csv')
-
-
-
-
-#Split and make appropriate transformations
-lsvt_X = lsvt[lsvt.columns[1:lsvt.shape[1]]].copy()
-lsvt_Y = lsvt[lsvt.columns[0]].copy() - 1
-lsvt_X = pd.get_dummies(lsvt_X)
-del lsvt
-
+#Madelon Dataset
+train_url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/madelon/MADELON/madelon_train.data'
+# download the file
+raw_data = urllib.request.urlopen(train_url)
+train = pd.read_csv(raw_data, delim_whitespace=True, header=None)
+train.columns = ["Var"+str(x) for x in range(len(train.columns))]
+labels_url = 'http://archive.ics.uci.edu/ml/machine-learning-databases/madelon/MADELON/madelon_train.labels'
+raw_data = urllib.request.urlopen(labels_url)
+labels = pd.read_csv(raw_data, delimiter=",", header=None)
+labels.columns = ["Y"]
 
 
 ########################################################################################################################
@@ -22,19 +20,17 @@ del lsvt
 #  Test that BoostARoota is working
 #
 ########################################################################################################################
-a =BoostARoota(metric='logloss')
-a.fit(train,labels)
+br = BoostARoota(metric='logloss')
+
+br.fit(train,labels)
 len(train.columns)
-len(a.keep_vars_)
-a.transform(train)
-a.fit_transform(train,labels)
+len(br.keep_vars_)
+new_train = br.transform(train)
+new_train2 = br.fit_transform(train,labels)
 
-
-#Reduce the data frame
-new_X = lsvt_X[names].copy()
 
 #Dimension Reduction
-print("lsvt_X has " + str(lsvt_X.shape) + " dimensions.")
-print("BoostARoota reduces to " + str(new_X.shape) + " dimensions.")
-
-
+print("Original training set has " + str(train.shape) + " dimensions.")
+print("BoostARoota with .fit() and .transform() reduces to " + str(new_train.shape) + " dimensions.")
+print("BoostARoota with .fit_transform() reduces to " + str(new_train2.shape) + " dimensions.")
+print("The two methods may give a slightly different dimensions because of random variation as it is being refit")
