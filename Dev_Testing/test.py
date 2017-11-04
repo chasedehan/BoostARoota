@@ -114,8 +114,9 @@ def repCV(X, Y, eval, repeats=3):
     df.columns = names
     return df
 
-data_path = "//pf.stormwind.local/DDE/Chase/Data/"
+
 #################
+#
 #LSVT Voice Rehab data
     # Data came from here: https://archive.ics.uci.edu/ml/datasets/LSVT+Voice+Rehabilitation
 lsvt = pd.read_csv(data_path + "LSVT_VR.csv")

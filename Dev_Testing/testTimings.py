@@ -10,7 +10,7 @@ OLD - has the older call to BR
 import pandas as pd
 import numpy as np
 import urllib
-import boostaroota as br
+from boostaroota import BoostARoota
 import time
 
 ########################################################################################################################
@@ -59,12 +59,13 @@ def oneIteration():
                                            columns=['Ext'+ str(x) for x in range(extraAttLen)])
             #Bind the dataframes together
             bound = pd.concat([this_df, extraAttributes],axis=1,ignore_index=True)
+
         else:
             bound = this_df.copy()
         start = time.time()
-        br.BoostARoota(this_df,this_y,metric='logloss')
+        br = BoostARoota(metric='logloss')
+        br.fit(bound,this_y)
         timings.append(time.time()-start)
-
     return timings
 
 
@@ -72,7 +73,7 @@ timingDF = pd.DataFrame({'Attributes': [x for x,y in combos],
                          'Objects': [y for x,y in combos]})
 
 #Run through the timing structure 3 times
-for i in range(3):
+for i in range(10):
     timingDF['N'+str(i)] = oneIteration()
 
 timingDF.to_csv('timings.csv')
