@@ -40,6 +40,8 @@ br.transform(x)
 
 It's really that simple!  Of course, as we build more functionality there may be a few more Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, pd.get_dummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
 
+You can also view a complete demo [here.](https://github.com/chasedehan/BoostARoota/blob/master/Dev_Testing/demo.py)
+
 ## Usage - Choosing Parameters
 
 The default parameters are optimally chosen for the widest range of input dataframes.  However, there are cases where other values could be more optimal.
