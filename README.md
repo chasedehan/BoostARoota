@@ -113,6 +113,7 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
  * Algorithm could use a better stopping criteria
    * Next step is to test it against Y and the eval_metric to see when it is falling off.
  * Expand compute to handle larger datasets (if user has the hardware)
+   * Run on Dask - Issue was opened up and Chase is working on it
    * Run on PySpark: make it easy enough that can just pass in SparkContext - will require some refactoring
    * Run XGBoost on GPU - although may run into memory issues with the shadow features.
    
