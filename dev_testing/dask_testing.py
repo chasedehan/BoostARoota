@@ -38,7 +38,7 @@ df2 = dd.get_dummies(train.categorize()).persist()
 #
 ########################################################################################################################
 params = {'eval_metric': 'rmse'}  # use normal xgboost params
-#params = {'eval_metric': 'logloss'}  # use normal xgboost params
+
 bst = dxgb.train(client, params, df2, y)
 
 
