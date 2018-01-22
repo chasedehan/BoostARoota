@@ -35,3 +35,16 @@ print("Original training set has " + str(train.shape) + " dimensions. \n" +\
 "BoostARoota with .fit_transform() reduces to " + str(new_train2.shape) + " dimensions.\n" +\
 "The two methods may give a slightly different dimensions because of random variation as it is being refit")
 
+
+########################################################################################################################
+#
+#  Test that its working with any classifier
+#
+########################################################################################################################
+from sklearn.ensemble import RandomForestClassifier
+clf = RandomForestClassifier()
+
+from sklearn.ensemble import ExtraTreesClassifier
+clf = ExtraTreesClassifier()
+br = BoostARoota(clf=clf)
+new_train = br.fit_transform(train, labels)
