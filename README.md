@@ -1,5 +1,5 @@
 # BoostARoota  
-A Fast XGBoost Feature Selection Algorithm  
+A Fast XGBoost Feature Selection Algorithm  (plus other sklearn tree-based classifiers)
 
 ## Why Create Another Algorithm?  
 Automated processes like Boruta showed early promise as they were able to provide superior performance with Random Forests, but has some deficiencies including slow computation time: especially with high dimensional data. Regardless of the run time, Boruta does perform well on Random Forests, but performs poorly on other algorithms such as boosting or neural networks. Similar deficiencies occur with regularization on LASSO, elastic net, or ridge regressions in that they perform well on linear regressions, but poorly on other modern algorithms.
@@ -17,7 +17,7 @@ $ pip install boostaroota
 This module is built for use in a similar manner to sklearn with `fit()`, `transform()`, etc.  In order to use the package, it does require X to be one-hot-encoded(OHE), so using the pandas function `pd.get_dummies(X)` may be helpful as it determines which variables are categorical and converts them into dummy variables.  This package does rely on pandas under the hood so data must be passed in as a pandas dataframe.
 
 Assuming you have X and Y split, you can run the following:  
-```
+```python
 from boostaroota import BoostARoota
 import pandas as pd
 
@@ -40,12 +40,30 @@ br.transform(x)
 
 It's really that simple!  Of course, as we build more functionality there may be a few more Keep in mind that since you are OHE, if you have a numeric variable that is imported by python as a character, pd.get_dummies() will convert those numeric into many columns.  This can cause your DataFrame to explode in size, giving unexpected results and high run times.
 
+###New as of 1/22/2018, can insert any sklearn tree-based learner into BoostARoota
+Please be aware that this hasn't been fully tested out for which parameters (cutoff, iterations, etc) are optimal.  Currently, that will require some trial and error on the user's part.
+
+For example, to use another classifer, you will initialize the object and then pass that object into the BoostARoota object like so:
+```python
+
+from sklearn.ensemble import ExtraTreesClassifier
+clf = ExtraTreesClassifier()
+
+br = BoostARoota(clf=clf)
+new_train = br.fit_transform(train, labels)
+
+```
+
 You can also view a complete demo [here.](https://github.com/chasedehan/BoostARoota/blob/master/odsc_west/demo.py)
 
 ## Usage - Choosing Parameters
 
 The default parameters are optimally chosen for the widest range of input dataframes.  However, there are cases where other values could be more optimal.
 
+* clf [default=None] - optional, recommended to leave empty
+  * Will default to xgboost if left empty  
+  * For use with any tree based learner from sklearn.  
+    * The default parameters are not optimal and will require user experimentation.     
 * cutoff [default=4] - float (cutoff > 0)
   * Adjustment to removal cutoff from the feature importances
     * Larger values will be more conservative - if values are set too high, a small number of features may end up being removed.
@@ -100,10 +118,6 @@ This has also been tested on [Kaggle's House Prices](https://www.kaggle.com/c/ho
 
 ## Future Functionality (i.e. Current Shortcomings)
 The text file `FS_algo_basics.txt` details how I was thinking through the algorithm and what additional functionality was thought about during the creation.
- * Currently, you must pass in a OHE DataFrame. Would like to add more "smarter" reductions
-   * Ex/ Pass in categorical variables and keeps/drops all levels of the variable (rather than just dropping some dummy variable/levels)
-   * Ex/ Pass in categorical, drops some levels and returns dataframe in the same form
-     * Have run into problems with dimensions and names differing - would like to fix this
  * Preprocessing Steps - Need some first pass filters for reducing dimensionality right off the bat
    * Check and drop _identical_ features, leaving option to drop highly correlated variables
    * Drop variables with near-zero-variance to target variable (creating threshold will be difficult)
@@ -118,6 +132,7 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
    * Run XGBoost on GPU - although may run into memory issues with the shadow features.
    
 ## Updates
+* 1/22/18 - Added functionality to insert any tree based classifier from sklearn into BoostARoota.
 * 10/26/17 - Modified Structure to resemble sklearn classes and added tuning parameters.
 * 9/22/17 - Uploaded to PyPI and expanded tests
 * 9/8/17 - Added Support for multi-class classification, but only for the logloss eval_metric.  Need to pass in eval="mlogloss"
@@ -128,8 +143,5 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
 
 This project has found some initial successes and there are a number of directions it can head.  It would be great to have some additional help if you are willing/able.  Whether it is directly contributing to the codebase or just giving some ideas, any help is appreciated.  The goal is to make the algorithm as robust as possible.  The primary focus right now is on the components under Future Implementations, but are in active development.  Please reach out to see if there is anything you would like to contribute in that part to make sure we aren't duplicating work.  
 
-## Current Contributors
-* Chase DeHan
-* Zach Riddle
 
 A special thanks to [Progressive Leasing](http://progleasing.com) for sponsoring this research.
