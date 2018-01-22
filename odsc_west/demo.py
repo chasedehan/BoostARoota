@@ -46,5 +46,5 @@ clf = RandomForestClassifier()
 
 from sklearn.ensemble import ExtraTreesClassifier
 clf = ExtraTreesClassifier()
-br = BoostARoota(metric=None, clf=clf)
+br = BoostARoota(clf=clf)
 new_train = br.fit_transform(train, labels)

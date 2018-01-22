@@ -14,7 +14,7 @@ import warnings
 
 class BoostARoota(object):
 
-    def __init__(self, metric, clf=None, cutoff=4, iters=10, max_rounds=100, delta=0.1, silent=False):
+    def __init__(self, metric=None, clf=None, cutoff=4, iters=10, max_rounds=100, delta=0.1, silent=False):
         self.metric = metric
         self.clf = clf
         self.cutoff = cutoff
@@ -25,6 +25,8 @@ class BoostARoota(object):
         self.keep_vars_ = None
 
         #Throw errors if the inputted parameters don't meet the necessary criteria
+        if (metric is None) and (clf is None):
+            raise ValueError('you must enter one of metric or clf as arguments')
         if cutoff <= 0:
             raise ValueError('cutoff should be greater than 0. You entered' + str(cutoff))
         if iters <= 0:
@@ -33,6 +35,8 @@ class BoostARoota(object):
             raise ValueError('delta should be between 0 and 1, was ' + str(delta))
 
         #Issue warnings for parameters to still let it run
+        if (metric is not None) and (clf is not None):
+            warnings.warn('You entered values for metric and clf, defaulting to clf and ignoring metric')
         if delta < 0.02:
             warnings.warn("WARNING: Setting a delta below 0.02 may not converge on a solution.")
         if max_rounds < 1:
