@@ -28,7 +28,7 @@ x = pd.getdummies(x)
 br = BoostARoota(metric='logloss')
 
 #Fit the model for the subset of variables
-br.fit(x,y)
+br.fit(x, y)
 
 #Can look at the important variables - will return a pandas series
 br.keep_vars_
@@ -50,7 +50,7 @@ from sklearn.ensemble import ExtraTreesClassifier
 clf = ExtraTreesClassifier()
 
 br = BoostARoota(clf=clf)
-new_train = br.fit_transform(train, labels)
+new_train = br.fit_transform(x, y)
 
 ```
 
