@@ -1,28 +1,38 @@
 # BoostARoota Makefile
 
-.PHONY: test test-verbose install clean example
+.PHONY: test test-verbose test-quick conda-env install clean example
 
-# Default Python interpreter
-PYTHON ?= python3
+# Conda environment name
+CONDA_ENV ?= boostaroota
 
-# Install dependencies from requirements.txt
+# Create / update conda environment
+conda-env:
+	conda env update -n $(CONDA_ENV) -f environment.yml || conda env create -n $(CONDA_ENV) -f environment.yml
+
+# Install via pip (fallback if not using conda)
 install:
-	$(PYTHON) -m pip install -r requirements.txt
+	pip install -r requirements.txt
+	pip install -e .
 
-# Run test suite
+# Run test suite with coverage (default CI target)
 test:
-	$(PYTHON) -m pytest tests/test_boostaroota.py -q
+	conda run -n $(CONDA_ENV) pytest tests/test_boostaroota.py -v --cov=boostaroota --cov-report=xml --cov-report=term
 
-# Run test suite with verbose output
-test-verbose:
-	$(PYTHON) -m pytest tests/test_boostaroota.py -v
+# Alias for test
+test-verbose: test
+
+# Fast test run without coverage
+test-quick:
+	conda run -n $(CONDA_ENV) pytest tests/test_boostaroota.py -q
 
 # Run example validation script
 example:
-	$(PYTHON) examples/run_example.py
+	conda run -n $(CONDA_ENV) python examples/run_example.py
 
 # Clean build artifacts
 clean:
 	rm -rf build/ dist/ *.egg-info
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
+	find . -type f -name ".coverage*" -delete
+	find . -type d -name ".pytest_cache" -exec rm -rf {} +

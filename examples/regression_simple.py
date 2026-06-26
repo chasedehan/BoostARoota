@@ -1,6 +1,12 @@
+import os
+import sys
+
+# Ensure we import the local repo version, not a pip-installed copy
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pandas as pd
 import numpy as np
-from boostaroota import BoostARoota
+from boostaroota.boostaroota import BoostARoota
 from sklearn.datasets import make_regression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error

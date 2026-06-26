@@ -144,6 +144,13 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
 Install test dependencies and run the test suite:
 
 ```bash
+conda env create -n boostaroota -f environment.yml
+conda activate boostaroota
+make test
+```
+
+Or with pip:
+```bash
 pip install -r requirements.txt
 pytest tests/test_boostaroota.py -q
 ```
@@ -153,7 +160,9 @@ See [TESTING.md](TESTING.md) for full details.
 A quick validation example covering classification, regression, and sklearn backends:
 
 ```bash
-python examples/run_example.py
+conda activate boostaroota
+make example
+# or: python examples/run_example.py
 ```
 
 ## Want to Contribute?

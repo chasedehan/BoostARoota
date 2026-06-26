@@ -6,14 +6,20 @@ Runs BoostARoota on synthetic classification and regression datasets,
 covering both XGBoost-native and sklearn-tree backends.
 
 Run:
-    pip install -r requirements.txt
+    conda activate boostaroota
     python examples/run_example.py
 """
+
+import os
+import sys
+
+# Ensure we import the local repo version, not a pip-installed copy
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import pandas as pd
 
-from boostaroota import BoostARoota
+from boostaroota.boostaroota import BoostARoota
 from sklearn.datasets import make_classification, make_regression
 from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
 

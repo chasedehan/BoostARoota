@@ -79,7 +79,9 @@ def _create_shadow(x_train):
     """
     x_shadow = x_train.copy()
     for c in x_shadow.columns:
-        np.random.shuffle(x_shadow[c].values)
+        # np.random.shuffle on DataFrame column values fails with numpy 2.x (read-only)
+        # Use permutation which returns a new shuffled array, compatible with numpy 1.x and 2.x
+        x_shadow[c] = np.random.permutation(x_shadow[c].values)
     # rename the shadow
     shadow_names = ["ShadowVar" + str(i + 1) for i in range(x_train.shape[1])]
     x_shadow.columns = shadow_names
@@ -163,7 +165,12 @@ def _reduce_vars_xgb(x, y, metric, this_round, cutoff, n_iterations, delta, sile
             print("Round: ", this_round, " iteration: ", i)
 
     df = df.fillna(0)
-    df['Mean'] = df.mean(axis=1)
+    # pandas 2.x requires numeric_only=True to exclude 'feature' string column
+    try:
+        df['Mean'] = df.mean(axis=1, numeric_only=True)
+    except TypeError:
+        # pandas <1.5 fallback
+        df['Mean'] = df.mean(axis=1)
     #Split them back out
     real_vars = df[~df['feature'].isin(shadow_names)]
     shadow_vars = df[df['feature'].isin(shadow_names)]
@@ -218,7 +225,12 @@ def _reduce_vars_sklearn(x, y, clf, this_round, cutoff, n_iterations, delta, sil
             print("Round: ", this_round, " iteration: ", i)
 
     df = df.fillna(0)
-    df['Mean'] = df.mean(axis=1)
+    # pandas 2.x requires numeric_only=True to exclude 'feature' string column
+    try:
+        df['Mean'] = df.mean(axis=1, numeric_only=True)
+    except TypeError:
+        # pandas <1.5 fallback
+        df['Mean'] = df.mean(axis=1)
     #Split them back out
     real_vars = df[~df['feature'].isin(shadow_names)]
     shadow_vars = df[df['feature'].isin(shadow_names)]

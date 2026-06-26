@@ -8,4 +8,10 @@ setup(name='boostaroota',
       author_email='chasedehan@yahoo.com',
       license='MIT',
       packages=['boostaroota'],
-      zip_safe=False, install_requires=['numpy','pandas', 'xgboost'])
+      zip_safe=False,
+      install_requires=[
+          'numpy>=1.21,<3.0',
+          'pandas>=1.5,<3.0',
+          'xgboost>=1.7,<3.0',
+          'scikit-learn>=1.3,<2.0',
+      ])
