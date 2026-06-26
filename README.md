@@ -139,6 +139,23 @@ The text file `FS_algo_basics.txt` details how I was thinking through the algori
 * 9/6/17 - have implemented in BoostARoota2() a stopping criteria specifying that at least 10% of features need to be dropped to continue.
 * 8/25/17 - The testBAR.py testing framework was just completed and ran through a number of datasets
 
+## Testing
+
+Install test dependencies and run the test suite:
+
+```bash
+pip install -r requirements.txt
+pytest tests/test_boostaroota.py -q
+```
+
+See [TESTING.md](TESTING.md) for full details.
+
+A quick validation example covering classification, regression, and sklearn backends:
+
+```bash
+python examples/run_example.py
+```
+
 ## Want to Contribute?
 
 This project has found some initial successes and there are a number of directions it can head.  It would be great to have some additional help if you are willing/able.  Whether it is directly contributing to the codebase or just giving some ideas, any help is appreciated.  The goal is to make the algorithm as robust as possible.  The primary focus right now is on the components under Future Implementations, but are in active development.  Please reach out to see if there is anything you would like to contribute in that part to make sure we aren't duplicating work.  

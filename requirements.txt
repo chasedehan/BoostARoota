@@ -2,3 +2,4 @@ pandas>=1.0
 numpy>=1.18
 xgboost>=1.0
 scikit-learn>=0.24
+pytest>=7.0
