@@ -116,43 +116,20 @@ As can be seen, the speed up from BoostARoota is around 100x with substantial re
 
 This has also been tested on [Kaggle's House Prices](https://www.kaggle.com/c/house-prices-advanced-regression-techniques/submissions?sortBy=date&group=all&page=1).  With nothing done except running BoostARoota and evaluated on RMSE, all features scored .15669, while BoostARoota scored 0.1560. 
 
-## Future Functionality (i.e. Current Shortcomings)
-The text file `FS_algo_basics.txt` details how I was thinking through the algorithm and what additional functionality was thought about during the creation.
- * Preprocessing Steps - Need some first pass filters for reducing dimensionality right off the bat
-   * Check and drop _identical_ features, leaving option to drop highly correlated variables
-   * Drop variables with near-zero-variance to target variable (creating threshold will be difficult)
-   * LDA, PCA, PLS rankings 
-     * Challenge with these is they remove based on linear relationships whereas trees are able to pick out the non-linear relationships and a variable with a low linear dependency may be powerful when combined with others.
-   * t-SNE - Has shown some promise in high-dimensional data
- * Algorithm could use a better stopping criteria
-   * Next step is to test it against Y and the eval_metric to see when it is falling off.
- * Expand compute to handle larger datasets (if user has the hardware)
-   * Run on Dask - Issue was opened up and Chase is working on it
-   * Run on PySpark: make it easy enough that can just pass in SparkContext - will require some refactoring
-   * Run XGBoost on GPU - although may run into memory issues with the shadow features.
-   
-## Updates
-* 1/22/18 - Added functionality to insert any tree based classifier from sklearn into BoostARoota.
-* 10/26/17 - Modified Structure to resemble sklearn classes and added tuning parameters.
-* 9/22/17 - Uploaded to PyPI and expanded tests
-* 9/8/17 - Added Support for multi-class classification, but only for the logloss eval_metric.  Need to pass in eval="mlogloss"
-* 9/6/17 - have implemented in BoostARoota2() a stopping criteria specifying that at least 10% of features need to be dropped to continue.
-* 8/25/17 - The testBAR.py testing framework was just completed and ran through a number of datasets
 
 ## Testing
 
 Install test dependencies and run the test suite:
 
 ```bash
-conda env create -n boostaroota -f environment.yml
-conda activate boostaroota
-make test
-```
-
-Or with pip:
-```bash
 pip install -r requirements.txt
 pytest tests/test_boostaroota.py -q
+```
+
+Or with Make:
+
+```bash
+make test
 ```
 
 See [TESTING.md](TESTING.md) for full details.
@@ -160,7 +137,6 @@ See [TESTING.md](TESTING.md) for full details.
 A quick validation example covering classification, regression, and sklearn backends:
 
 ```bash
-conda activate boostaroota
 make example
 # or: python examples/run_example.py
 ```

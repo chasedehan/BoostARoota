@@ -29,3 +29,8 @@ ENV/
 .DS_Store
 .vscode/
 .idea/
+
+# Testing / coverage
+.coverage
+coverage.xml
+.pytest_cache/

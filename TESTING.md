@@ -1,18 +1,6 @@
 # Testing BoostARoota
 
-## Install dependencies (conda – recommended)
-
-```bash
-conda env create -n boostaroota -f environment.yml
-conda activate boostaroota
-```
-
-Or update an existing environment:
-```bash
-conda env update -n boostaroota -f environment.yml
-```
-
-### pip fallback
+## Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -22,7 +10,7 @@ Requirements: numpy>=1.21,<3.0, pandas>=1.5,<3.0, scikit-learn>=1.3,<2.0, xgboos
 
 ## Run test suite
 
-With conda / Makefile:
+With Makefile:
 ```bash
 make test          # pytest with coverage, CI target
 make test-quick    # fast, no coverage
@@ -31,7 +19,8 @@ make test-verbose  # alias for make test
 
 Direct:
 ```bash
-conda run -n boostaroota pytest tests/test_boostaroota.py -q
+pytest tests/test_boostaroota.py -q
+pytest tests/test_boostaroota.py -v --cov=boostaroota --cov-report=term
 ```
 
 The test suite covers:
@@ -53,7 +42,6 @@ The test suite covers:
 ## Example validation
 
 ```bash
-conda activate boostaroota
 make example
 # or: python examples/run_example.py
 ```
@@ -70,4 +58,4 @@ A simpler regression-only example is at `examples/regression_simple.py`.
 
 ## CI
 
-GitHub Actions runs on push to `master`, Python 3.9–3.12 matrix, via conda (`environment.yml`), with coverage reporting to Codecov. CI runs the pytest assertion suite only.
+GitHub Actions runs on push to `master`, Python 3.9–3.12 matrix, with coverage reporting to Codecov. CI runs the pytest assertion suite only.
