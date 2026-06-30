@@ -1,0 +1,56 @@
+# Benchmark datasets configuration
+# Add new datasets here. Place CSV in benchmarks/data/{name}.csv
+# and register below. Path defaults to benchmarks/data/{name}.csv
+#
+# Fields:
+#   name: unique dataset identifier (must match CSV filename in benchmarks/data/)
+#   target: target column name (required)
+#   task: classification | regression | auto (default auto)
+#   metric: xgboost eval metric (logloss, mlogloss, rmse, etc.)
+#   source: optional, defaults to csv at benchmarks/data/{name}.csv
+#     type: csv
+#     path: optional override, defaults to benchmarks/data/{name}.csv
+#     sep: optional separator, default ','
+
+datasets:
+  - name: wine_quality
+    display_name: "Wine Quality"
+    target: quality
+    task: classification
+    metric: mlogloss
+    url: "https://archive.ics.uci.edu/dataset/186/wine+quality"
+
+  - name: adult
+    display_name: "Income"
+    target: income
+    task: classification
+    metric: logloss
+    url: "https://archive.ics.uci.edu/dataset/2/adult"
+
+  - name: spambase
+    display_name: "Spambase"
+    target: Class
+    task: classification
+    metric: logloss
+    url: "https://archive.ics.uci.edu/dataset/94/spambase"
+
+  - name: lsvt
+    display_name: "LSVT"
+    target: class
+    task: classification
+    metric: logloss
+    url: "https://archive.ics.uci.edu/dataset/282/lsvt+voice+rehabilitation"
+
+# Example new dataset:
+#  - name: my_dataset
+#    display_name: "My Dataset"
+#    target: target_column
+#    task: classification
+#    metric: logloss
+#    # CSV expected at benchmarks/data/my_dataset.csv
+#    # Or override path:
+#    # source:
+#    #   type: csv
+#    #   path: "benchmarks/data/my_dataset.csv"
+#    #   # path: "https://example.com/data.csv"
+
