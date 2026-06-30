@@ -334,3 +334,62 @@ def test_nan_mean_shadow_integration():
         assert len(br.keep_vars_) > 0
         assert len(br.keep_vars_) <= X.shape[1]
 
+
+def test_sklearn_no_duplicate_columns():
+    """
+    Regression test for issue #21: sklearn implementation was creating duplicate
+    columns by reusing df2 across iterations, causing fscore1_x, fscore1_y, etc.
+    This diluted the mean feature importance calculation.
+    The fix creates a fresh df2 each iteration, similar to the xgb implementation.
+    """
+    from unittest import mock
+    from boostaroota.boostaroota import _reduce_vars_sklearn
+
+    np.random.seed(42)
+    X, y = make_classification_df(n_features=10, n_informative=3)
+    clf = ExtraTreesClassifier(n_estimators=10, random_state=42)
+
+    # Track merge calls to verify no duplicate columns are created
+    original_merge = pd.merge
+    merge_columns = []
+
+    def counting_merge(*args, **kwargs):
+        result = original_merge(*args, **kwargs)
+        merge_columns.append(result.columns.tolist())
+        return result
+
+    with mock.patch('pandas.merge', side_effect=counting_merge):
+        criteria, keep_vars = _reduce_vars_sklearn(
+            X, y, clf, this_round=1, cutoff=4, n_iterations=3, delta=0.1, silent=True
+        )
+
+    # Verify no duplicate columns with _x or _y suffix were created
+    for cols in merge_columns:
+        duplicate_cols = [c for c in cols if '_x' in c or '_y' in c]
+        assert len(duplicate_cols) == 0, f"Found duplicate columns: {duplicate_cols}"
+
+    # Verify expected column structure: feature + fscore1, fscore2, fscore3
+    final_cols = merge_columns[-1]
+    assert 'feature' in final_cols
+    assert 'fscore1' in final_cols
+    assert 'fscore2' in final_cols
+    assert 'fscore3' in final_cols
+    # Should have exactly 4 columns (feature + 3 fscores), no duplicates
+    assert len(final_cols) == 4, f"Expected 4 columns, got {len(final_cols)}: {final_cols}"
+
+    # Verify keep_vars is valid
+    assert keep_vars is not None
+    assert len(keep_vars) > 0
+
+
+def test_sklearn_invalid_clf_raises():
+    """Test that sklearn path raises error for clf without feature_importances_."""
+    from sklearn.linear_model import LogisticRegression
+
+    np.random.seed(42)
+    X, y = make_classification_df()
+    clf = LogisticRegression()  # Does not have feature_importances_
+    br = BoostARoota(clf=clf, iters=1, silent=True)
+    with pytest.raises(ValueError, match="feature_importances_"):
+        br.fit(X, y)
+

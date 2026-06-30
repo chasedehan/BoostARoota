@@ -208,19 +208,19 @@ def _reduce_vars_sklearn(x, y, clf, this_round, cutoff, n_iterations, delta, sil
 
         if i == 1:
             df = pd.DataFrame({'feature': new_x.columns})
-            df2 = df.copy()
-            pass
 
-        try:
-            importance = clf.feature_importances_
-            df2['fscore' + str(i)] = importance
-        except ValueError:
-            print("this clf doesn't have the feature_importances_ method.  Only Sklearn tree based methods allowed")
+        # Check if clf has feature_importances_ attribute
+        if not hasattr(clf, 'feature_importances_'):
+            raise ValueError("this clf doesn't have the feature_importances_ method. Only Sklearn tree based methods allowed")
 
-        # importance = sorted(importance.items(), key=operator.itemgetter(1))
-
-        # df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
-        df2['fscore'+str(i)] = df2['fscore'+str(i)] / df2['fscore'+str(i)].sum()
+        importance = clf.feature_importances_
+        # Create DataFrame from importance array aligned with feature names
+        importance = list(zip(new_x.columns, importance))
+        df2 = pd.DataFrame(importance, columns=['feature', 'fscore'+str(i)])
+        # Normalize, avoid division by zero
+        fscore_sum = df2['fscore'+str(i)].sum()
+        if fscore_sum > 0:
+            df2['fscore'+str(i)] = df2['fscore'+str(i)] / fscore_sum
         df = pd.merge(df, df2, on='feature', how='outer')
         if not silent:
             print("Round: ", this_round, " iteration: ", i)
