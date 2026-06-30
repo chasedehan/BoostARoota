@@ -335,6 +335,46 @@ def test_nan_mean_shadow_integration():
         assert len(br.keep_vars_) <= X.shape[1]
 
 
+def test_nan_mean_shadow_sklearn_integration():
+    """
+    Integration test for PR #20 with sklearn path:
+    When none of the shadow features are used, their mean is nan.
+    The fix ensures mean_shadow is set to 0, so real features with
+    positive importance are kept instead of all being removed.
+    """
+    from unittest import mock
+    from boostaroota.boostaroota import _reduce_vars_sklearn
+
+    np.random.seed(42)
+    X, y = make_classification_df(n_features=10, n_informative=3)
+
+    # Create a mock clf that returns feature importances only for real features
+    # Shadow features will have 0 importance, leading to potential nan mean
+    class FakeClf:
+        def fit(self, X, y):
+            self.feature_importances_ = np.array([0.5, 0.3, 0.2, 0.1, 0.05] + [0.0] * (X.shape[1] - 5))
+            return self
+
+    clf = FakeClf()
+
+    # Test that _reduce_vars_sklearn handles nan mean_shadow correctly
+    criteria, keep_vars = _reduce_vars_sklearn(
+        X, y, clf, this_round=1, cutoff=4, n_iterations=2, delta=0.1, silent=True
+    )
+
+    # Should keep some features, not all removed
+    assert keep_vars is not None
+    assert len(keep_vars) > 0
+
+    # Test with sklearn BoostARoota interface
+    from sklearn.ensemble import ExtraTreesClassifier
+    clf2 = ExtraTreesClassifier(n_estimators=5, random_state=42)
+    br = BoostARoota(clf=clf2, iters=2, silent=True, max_rounds=1)
+    br.fit(X, y)
+    assert br.keep_vars_ is not None
+    assert len(br.keep_vars_) > 0
+
+
 def test_sklearn_no_duplicate_columns():
     """
     Regression test for issue #21: sklearn implementation was creating duplicate
