@@ -177,6 +177,7 @@ def _reduce_vars_xgb(x, y, metric, this_round, cutoff, n_iterations, delta, sile
 
     # Get mean value from the shadows
     mean_shadow = shadow_vars['Mean'].mean() / cutoff
+    mean_shadow = mean_shadow if not np.isnan(mean_shadow) else 0
     real_vars = real_vars[(real_vars.Mean > mean_shadow)]
 
     #Check for the stopping criteria
@@ -237,6 +238,7 @@ def _reduce_vars_sklearn(x, y, clf, this_round, cutoff, n_iterations, delta, sil
 
     # Get mean value from the shadows
     mean_shadow = shadow_vars['Mean'].mean() / cutoff
+    mean_shadow = mean_shadow if not np.isnan(mean_shadow) else 0
     real_vars = real_vars[(real_vars.Mean > mean_shadow)]
 
     #Check for the stopping criteria

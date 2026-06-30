@@ -263,3 +263,74 @@ def test_max_rounds_limits_iterations(capsys=None):
     out = f.getvalue()
     # Should stop at round 1 due to max_rounds
     assert "1 rounds" in out or "Round:" in out
+
+
+def test_nan_mean_shadow_handled():
+    """
+    Regression test for PR #20: when none of the shadow features are used in the fit,
+    their mean importance is nan, which previously caused removal of all real features.
+    The fix sets mean_shadow to 0 if nan, so real features with positive importance are kept.
+    """
+    import pandas as pd
+    import numpy as np
+
+    # Simulate real and shadow vars DataFrames as created in _reduce_vars_xgb/_reduce_vars_sklearn
+    real_vars = pd.DataFrame({
+        'feature': ['feat_0', 'feat_1', 'feat_2'],
+        'Mean': [0.5, 0.1, 0.0]
+    })
+    shadow_vars = pd.DataFrame({
+        'feature': ['ShadowVar1', 'ShadowVar2'],
+        'Mean': [float('nan'), float('nan')]
+    })
+
+    cutoff = 4
+    mean_shadow = shadow_vars['Mean'].mean() / cutoff
+    # Verify mean_shadow is nan before fix
+    assert np.isnan(mean_shadow)
+
+    # Apply the fix: set to 0 if nan
+    mean_shadow_fixed = mean_shadow if not np.isnan(mean_shadow) else 0
+    assert mean_shadow_fixed == 0
+
+    # Filter real vars with fix
+    filtered_fixed = real_vars[(real_vars.Mean > mean_shadow_fixed)]
+    # Should keep features with Mean > 0
+    assert len(filtered_fixed) == 2
+    assert set(filtered_fixed['feature']) == {'feat_0', 'feat_1'}
+
+    # Without fix, Mean > nan is False for all, resulting in empty set (the bug)
+    filtered_buggy = real_vars[(real_vars.Mean > mean_shadow)]
+    assert len(filtered_buggy) == 0
+
+
+def test_nan_mean_shadow_integration():
+    """
+    Integration test: mock xgboost to return no shadow feature importance,
+    causing shadow mean to be nan or 0, and verify BoostARoota does not
+    remove all real features.
+    """
+    from unittest import mock
+
+    np.random.seed(42)
+    X, y = make_classification_df(n_features=10, n_informative=3)
+
+    # Mock xgb.DMatrix to pass through
+    # Mock xgb.train to return a booster with importance only for real features
+    class FakeBooster:
+        def get_score(self, importance_type='weight'):
+            # Only real features have importance; shadow features missing
+            # This simulates case where none of the shadow features are used
+            return {f'feat_{i}': 10 - i for i in range(5)}  # first 5 real features
+        def get_fscore(self):
+            return self.get_score()
+
+    with mock.patch('boostaroota.boostaroota.xgb.DMatrix'), \
+         mock.patch('boostaroota.boostaroota.xgb.train', return_value=FakeBooster()):
+        br = BoostARoota(metric='logloss', iters=2, silent=True, max_rounds=1)
+        br.fit(X, y)
+        # Should keep some features, not all removed due to nan mean_shadow
+        assert br.keep_vars_ is not None
+        assert len(br.keep_vars_) > 0
+        assert len(br.keep_vars_) <= X.shape[1]
+
