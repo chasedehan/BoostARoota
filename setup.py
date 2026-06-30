@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='boostaroota',
-      version='1.2.0.b',
+      version='2.0.0',
       description='A Fast XGBoost Feature Selection Algorithm',
       url='http://github.com/chasedehan/BoostARoota',
       author='Chase DeHan',
