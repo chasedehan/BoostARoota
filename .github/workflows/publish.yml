@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write   # Required for PyPI trusted publishing (OIDC), and prevents the "missing OIDC token" error when using API tokens with newer action versions
 
     steps:
       - uses: actions/checkout@v4
@@ -44,3 +45,5 @@ jobs:
           # To publish to TestPyPI first, uncomment below:
           # repository-url: https://test.pypi.org/legacy/
           # password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          # For OIDC trusted publishing instead of API token, comment out password above and configure a trusted publisher on PyPI:
+          # https://docs.pypi.org/trusted-publishers/
